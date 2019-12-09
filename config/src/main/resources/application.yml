@@ -1,0 +1,22 @@
+#film:
+#  title: ZOOLANDER FICTION
+#  year: 2006
+#  length: 50
+#  actors:
+#    - {firstName: NICK,lastName: WAHLBERG}
+#    - {firstName: JOHNNY,lastName: LOLLOBRIGIDA}
+server:
+  port: 8081
+spring:
+  profiles:
+    active: prod
+---
+server:
+  port: 8082
+spring:
+  profiles: dev
+---
+server:
+  port: 8083
+spring:
+  profiles: prod

@@ -1,0 +1,7 @@
+film:
+  title: ZOOLANDER FICTION
+  year: 2006
+  length: 50
+  actors:
+    - {firstName: NICK,lastName: WAHLBERG}
+    - {firstName: JOHNNY,lastName: LOLLOBRIGIDA}
