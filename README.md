@@ -591,4 +591,8 @@ SpringBoot使用该组件完成日志功能。
 
 所以SpringBoot能够自动适配所有的日志，引入其他框架的时候，需要将这个框架依赖的日志框架移除
 
-#### 4、
+#### 4、默认配置文件
+
+在org.springframework.boot.jar的logging文件夹下
+
+给类路径下放置每个日志框架各自的配置文件即可，SpringBoot将不使用自己的默认配置了。
