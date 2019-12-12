@@ -486,7 +486,109 @@ java -jar config-0.0.1-SNAPSHOT.jar --server.port=8083 --server.context-path=/bo
 
     xxxxProperties：封装配置文件中相关的属性
 
-  
+  #### 7、细节
 
+  ##### 1、@Conditional派生注解（Spring注解版原生的@Conditional作用）
   
+  作用：必须是@Conditional指定的条件成立，才给容器中添加组件，配置里面的所有内容才生效
+  
+  ![批注 2019-12-11 203956](E:\study\spring boot\md pic\批注 2019-12-11 203956.png)
 
+自动配置类必须在一定的条件下才生效
+
+通过在application.properties里添加debug=true，SpringBoot以debug模式运行，启动时log会生成配置类可用的报告。
+
+```java
+============================
+CONDITIONS EVALUATION REPORT
+============================
+
+
+Positive matches://生效的配置类
+-----------------
+
+   AopAutoConfiguration matched:
+```
+
+```java
+Negative matches: //没生效的配置类
+-----------------
+
+   ActiveMQAutoConfiguration:
+      Did not match:
+```
+
+
+
+## 三、日志文件
+
+#### 1、日志框架
+
+|                   日志门面（日志的抽象层）                   |                           日志实现                           |
+| :----------------------------------------------------------: | :----------------------------------------------------------: |
+| JCL（Jakarta Commons Logging）    SLF4J(Simple Logging Facade for java) | Log4j JUL(java.util.logging)                 Log4j2   Logback |
+
+左边选一个门面，右边选一个实现；
+
+日志门面选择：SLF4J
+
+日志实现选择：Logback
+
+SpringBoot：底层是Spring框架，Spring框架默认是用JCL；SpringBoot选用SLF4J和Logback
+
+#### 2、SLF4J使用
+
+##### 1、如何在系统中使用SLF4J
+
+以后开发的时候，日志记录方法的调用，不应该直接调用日志的实现类，而应该调用日志抽象层的方法。
+
+[SLF4J官方文档](http://www.slf4j.org/manual.html)
+
+ 给项目里导入slf4j的jar和logback的实现jar
+
+```java
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+public class HelloWorld {
+  public static void main(String[] args) {
+    Logger logger = LoggerFactory.getLogger(HelloWorld.class);
+    logger.info("Hello World");
+  }
+}
+```
+
+每一个日志的实现框架都有自己的配置文件，使用slf4j以后，配置文件还是用日志实现类本身的。
+
+##### 2、统一日志框架
+
+统一项目中各个框架的使用的日志框架，统一使用slf4j进行输出
+
+###### 1、将项目中其他日志框架先排除，
+
+###### 2、用中间包替换原有的日志框架
+
+3、导入slf4j的实现
+
+#### 3、SpringBoot日志关系
+
+SpringBoot使用该组件完成日志功能。
+
+```xml
+    <dependency>
+      <groupId>org.springframework.boot</groupId>
+      <artifactId>spring-boot-starter-logging</artifactId>
+    </dependency>
+```
+
+###### 1）、SpringBoot底层也是使用slf4j+logback的方式进行日志记录
+
+###### 2）、SpringBoot利用中间转换包，把其他的日志都替换成为slf4j
+
+###### 3）、中间转换包重写了元日志框架的类和方法，使用slf4j进行记录
+
+###### 4）、将框架默认的日志依赖移除`<exclusion>`
+
+所以SpringBoot能够自动适配所有的日志，引入其他框架的时候，需要将这个框架依赖的日志框架移除
+
+#### 4、
