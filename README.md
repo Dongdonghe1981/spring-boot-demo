@@ -595,4 +595,38 @@ SpringBoot使用该组件完成日志功能。
 
 在org.springframework.boot.jar的logging文件夹下
 
+| `logging.file.name` | `logging.file.path` | 例         | 描述                                     |
+| :------------------ | :------------------ | :--------- | :--------------------------------------- |
+| *(none)*            | *(none)*            |            | 只输出到控制台                           |
+| 指定文件            | *(none)*            | `my.log`   | 输出到指定的文件，该文件在项目的相对目录 |
+| *(none)*            | 指定目录            | `/var/log` | 输出到指定目录下 `spring.log` 文件       |
+
+#### 5、指定配置
+
 给类路径下放置每个日志框架各自的配置文件即可，SpringBoot将不使用自己的默认配置了。
+
+| 日志框架                | Customization                                                |
+| :---------------------- | :----------------------------------------------------------- |
+| Logback                 | `logback-spring.xml`, `logback-spring.groovy`, `logback.xml`, or `logback.groovy` |
+| Log4j2                  | `log4j2-spring.xml` or `log4j2.xml`                          |
+| JDK (Java Util Logging) | `logging.properties`                                         |
+
+logback.xml：被日志框架自动识别
+
+logback-spring.xml：日志框架不加载日志文件的配置项，但可以由SpringBoot加载
+
+```xml
+<springProfile name="staging">
+    <!-- 可以指定某个配置只在某个环境下生效-->
+</springProfile>
+<springProfile name="dev | staging">
+    <!-- dev | staging 环境生效-->
+</springProfile>
+
+```
+
+## 四、Web开发
+
+使用SpringBoot
+
+1)、创建SpringBoot应用，选择使用的模块
