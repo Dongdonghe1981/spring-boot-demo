@@ -522,7 +522,7 @@ Negative matches: //没生效的配置类
 
 ## 三、日志文件
 
-#### 1、日志框架
+### 1、日志框架
 
 |                   日志门面（日志的抽象层）                   |                           日志实现                           |
 | :----------------------------------------------------------: | :----------------------------------------------------------: |
@@ -536,9 +536,9 @@ Negative matches: //没生效的配置类
 
 SpringBoot：底层是Spring框架，Spring框架默认是用JCL；SpringBoot选用SLF4J和Logback
 
-#### 2、SLF4J使用
+### 2、SLF4J使用
 
-##### 1、如何在系统中使用SLF4J
+#### 1、如何在系统中使用SLF4J
 
 以后开发的时候，日志记录方法的调用，不应该直接调用日志的实现类，而应该调用日志抽象层的方法。
 
@@ -560,7 +560,7 @@ public class HelloWorld {
 
 每一个日志的实现框架都有自己的配置文件，使用slf4j以后，配置文件还是用日志实现类本身的。
 
-##### 2、统一日志框架
+#### 2、统一日志框架
 
 统一项目中各个框架的使用的日志框架，统一使用slf4j进行输出
 
@@ -627,6 +627,368 @@ logback-spring.xml：日志框架不加载日志文件的配置项，但可以�
 
 ## 四、Web开发
 
-使用SpringBoot
+### 1、使用SpringBoot
 
-1)、创建SpringBoot应用，选择使用的模块
+**1）、创建SpringBoot应用，选择使用的模块**
+
+**2）、SpringBoot默认将模块创建完成，只需要在配置文件中指定少量配置就可以运行**
+
+**3）、编写业务代码**
+
+自动配置原理？
+
+这个模块SpringBoot帮我们配置了什么？嫩不能修改？能修改哪些配置？能不能扩展？
+
+```end
+xxxxAutoConfiguration：完成在容器中自动配置组件
+
+xxxxProperties：封装配置文件的内容
+```
+
+### 2、SpringBoot对静态资源的映射规则
+
+```java
+@ConfigurationProperties(
+    prefix = "spring.resources",
+    ignoreUnknownFields = false
+)
+public class ResourceProperties {
+    //可以设置和静态资源有关的参数，缓存时间等
+```
+
+WebMvcAutoConfiguration.java
+
+```java
+        public void addResourceHandlers(ResourceHandlerRegistry registry) {
+            if (!this.resourceProperties.isAddMappings()) {
+                logger.debug("Default resource handling disabled");
+            } else {
+                Duration cachePeriod =                     this.resourceProperties.getCache().getPeriod();
+                CacheControl cacheControl =                 this.resourceProperties.getCache().getCachecontrol().toHttpCacheControl();
+                if (!registry.hasMappingForPattern("/webjars/**")) {
+                    this.customizeResourceHandlerRegistration(registry.addResourceHandler(new String[]{"/webjars/**"}).addResourceLocations(new String[]{"classpath:/META-INF/resources/webjars/"}).setCachePeriod(this.getSeconds(cachePeriod)).setCacheControl(cacheControl));
+                }
+
+                String staticPathPattern = this.mvcProperties.getStaticPathPattern();
+                if (!registry.hasMappingForPattern(staticPathPattern)) {
+                                    this.customizeResourceHandlerRegistration(registry.addResourceHandler(new String[]{staticPathPattern}).addResourceLocations(WebMvcAutoConfiguration.getResourceLocations(this.resourceProperties.getStaticLocations())).setCachePeriod(this.getSeconds(cachePeriod)).setCacheControl(cacheControl));
+                }
+
+            }
+        }
+		
+		//欢迎页的映射
+        @Bean
+        public WelcomePageHandlerMapping welcomePageHandlerMapping(ApplicationContext applicationContext, FormattingConversionService mvcConversionService, ResourceUrlProvider mvcResourceUrlProvider) {
+            WelcomePageHandlerMapping welcomePageHandlerMapping = new WelcomePageHandlerMapping(new TemplateAvailabilityProviders(applicationContext), applicationContext, this.getWelcomePage(), this.mvcProperties.getStaticPathPattern());
+            welcomePageHandlerMapping.setInterceptors(this.getInterceptors(mvcConversionService, mvcResourceUrlProvider));
+            return welcomePageHandlerMapping;
+        }
+```
+
+
+
+1）、在`classpath:/META-INF/resources/webjars/`下找资源文件
+
+webjars：以jar包的方式引入静态资源
+
+[webjars官网](www.webjars.org)   导入org.webjars.jquery后的目录结构
+
+![批注 2019-12-13 204940jq](E:\study\spring boot\md pic\批注 2019-12-13 204940jq.png)
+
+http://localhost:8080/webjars/jquery/3.3.1/jquery.js
+
+2）、"/**"访问当前项目的任何资源，下面是静态资源的文件夹
+
+ResourceProperties.java
+
+```java
+private static final String[] CLASSPATH_RESOURCE_LOCATIONS = new String[]{"classpath:/META-INF/resources/", 
+                                                                          "classpath:/resources/", 
+                                                                          "classpath:/static/", 
+                                                                          "classpath:/public/"};
+```
+
+3）、欢迎页，静态资源文件夹下的所有index.html页面，被/**映射
+
+​	localhost:8080/index.html
+
+4）、所有的页面的图标**/favicon.ico，都是在静态资源文件夹下
+
+### 3、模板引擎
+
+[Thymeleaf官网](https://www.thymeleaf.org/)
+
+![批注 2019-12-14 053525html](E:\study\spring boot\md pic\批注 2019-12-14 053525html.png)
+
+### 4、引入thymeleaf
+
+```xml
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-thymeleaf</artifactId>
+        </dependency>
+    <!-- 更改SpringBoot的thymeleaf默认版本 -->
+    <properties>
+        <thymeleaf.versin>3.0.9.RELEASE</thymeleaf.versin>
+        <!--布局功能的支持程序 thymeleaf是3的话，layout要求2以上版本-->
+        <thymeleaf-layout-dialect.version>2.2.2</thymeleaf-layout-dialect.version>
+    </properties>
+```
+
+### 5、Thymeleaf使用&语法
+
+ThymeleafProperties.java
+
+```java
+    public static final String DEFAULT_PREFIX = "classpath:/templates/";
+    public static final String DEFAULT_SUFFIX = ".html";
+    private String prefix = "classpath:/templates/";
+    private String suffix = ".html";
+    private String mode = "HTML";
+```
+
+#### 1、导入Thymeleaf的名称空间
+
+```html
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+```
+
+#### 2、使用Thymeleaf语法
+
+```html
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+</head>
+<body>
+    <div th:text="${hello}">SpringBoot</div>
+</body>
+</html>
+```
+
+#### 3、语法规则
+
+##### 1、th:text
+
+改变当前元素里面的文本内容
+
+th：任意html属性，替换原生属性的值
+
+| Order | Feature                                               | Attributes     |
+| :---- | ----------------------------------------------------- | -------------- |
+| 1     | Fragment inclusion（片段包含，jsp:include）           | th:insert      |
+|       |                                                       | th:replace     |
+| 2     | Fragment iteration（遍历）                            | th:each        |
+| 3     | Conditional evaluation（条件判断）                    | th:if          |
+|       |                                                       | th:unless      |
+|       |                                                       | th:switch      |
+|       |                                                       | th:case        |
+| 4     | Local variable definition（声明变量）                 | th:object      |
+|       |                                                       | th:with        |
+| 5     | General attribute modification（任意属性修改）        | th:attr        |
+|       |                                                       | th:attrprepend |
+|       |                                                       | th:attrappend  |
+| 6     | Specific attribute modification（修改制定属性默认值） | th:value       |
+|       |                                                       | th:href        |
+|       |                                                       | th:src         |
+| 7     | Text (tag body modification)（修改标签体内容）        | th:text        |
+|       | （text：转义特殊字符；utext：不转义特殊字符）         | th:utext       |
+| 8     | Fragment specification（声明片段）                    | th:fragment    |
+| 9     | Fragment removal                                      | th:remove      |
+
+##### 2、表达式
+
+```properties
+Simple expressions:(表达式语法)
+    Variable Expressions: ${...} #获取变量值
+            #1.获取对象的属性，调用方法
+            #2.使用内置的基本对象
+                #ctx : the context object.
+                #request : (only in Web Contexts) the HttpServletRequest object.
+                #response : (only in Web Contexts) the HttpServletResponse object.
+                #session : (only in Web Contexts) the HttpSession object.
+                #servletContext : (only in Web Contexts) the ServletContext object.
+                ：
+            #3.内置工具对象
+                #numbers : methods for formatting numeric objects
+                #arrays : methods for array
+				#lists : methods for lists
+				：
+    Selection Variable Expressions: *{...} #变量选择表达式，同${}功能相同，
+    										#配合th:object一起使用
+    Message Expressions: #{...}#获取国际化内容
+    Link URL Expressions: @{...}#定义URL
+    Fragment Expressions: ~{...}#片段引用表达式
+
+Literals（字面量）
+    Text literals: 'one text' , 'Another one!' ,…
+    Number literals: 0 , 34 , 3.0 , 12.3 ,…
+    Boolean literals: true , false
+    Null literal: null
+    Literal tokens: one , sometext , main ,…
+
+Text operations:（文本操作）
+    String concatenation: +
+    Literal substitutions: |The name is ${name}|
+
+Arithmetic operations:（数学运算）
+    Binary operators: + , - , * , / , %
+    Minus sign (unary operator): -
+
+Boolean operations:（布尔运算）
+    Binary operators: and , or
+    Boolean negation (unary operator): ! , not
+
+Comparisons and equality:（比较运算）
+    Comparators: > , < , >= , <= ( gt , lt , ge , le )
+    Equality operators: == , != ( eq , ne )
+
+Conditional operators:（条件运算）
+    If-then: (if) ? (then)
+    If-then-else: (if) ? (then) : (else)
+    Default: (value) ?: (defaultvalue)
+Special tokens:（特殊操作）
+No-Operation: _
+```
+
+
+
+# 到31讲
+
+## 五、SpringBoot与Docker
+
+### 1、简介
+
+### 2、核心概念
+
+Docker主机（Host）：安装了Docker的机器（Docker直接安装在操作系统上）
+
+Docker客户端（Client）： 连接Docker主机进行操作
+
+Docker仓库（Registry）：保存打包好的软件镜像
+
+Docker镜像（Images）：软件打包好的镜像，放在Docker仓库中
+
+Docker容器（Container）：镜像启动后的实例，称为容器；容器是独立运行的一个或一组应用
+
+**使用Docker步骤：**
+
+1、安装Docker
+
+2、在Docker仓库找到这个软件的镜像
+
+3、使用Docker运行这个镜像，这个镜像会生成一个Docker容器
+
+4、对容器的启动停止，就是对软件的启动停止
+
+### 3、安装Docker
+
+#### 1、安装Linux虚拟机
+
+1）、VMWare、VirtualBox
+
+2）、导入虚拟机文件centos7.ova
+
+3）、双击启动Linux虚拟机，使用root/dvwa登录
+
+4）、使用客户端连接Linux虚拟机
+
+5）、设置虚拟机网络
+
+​			桥接网络->选好网卡(跟主机windows10相同的无线网卡)->接入网线
+
+6）、设置好网络以后使用命令重启虚拟机的网络，或者重启虚拟机
+
+```shell
+service network restart
+```
+
+如果失败，参考[博客](https://blog.csdn.net/gunxueqiucjw/article/details/27231687)，[修改IP](https://blog.csdn.net/qq_41875147/article/details/81144327)，[启动异常](https://blog.csdn.net/yelllowcong/article/details/80389481)
+
+7）、查看Linux的IP地址 ip addr
+
+192.168.1.103
+
+8）、使用客户端连接
+
+#### 2、在Linux虚拟机上安装Docker
+
+步骤
+
+```shell
+1、检查内核版本必须是3.10以上
+uname -r
+2、安装docker
+yum install docker
+如果镜像出错，无法安装，[参考](https://blog.csdn.net/qq_30938705/article/details/87281698)
+3、输入y确认安装
+4、启动docker
+systemctl start docker
+docker -v
+5、开机启动docker
+systemctl enable docker
+6、停止docker
+systemctl stop docker
+```
+
+### 4、Docker常用命令和操作
+
+#### 1、镜像操作
+
+取得镜像，默认取得最新版，也可以指定版本 docker pull mysql
+
+查看左右本地镜像 docker images
+
+删除指定的本地镜像 docker rmi image-id
+
+https://hub.docker.com/
+
+#### 2、容器操作
+
+软件镜像 -> 运行镜像 -> 产生一个容器（正在运行的软件）
+
+步骤：
+
+```shell
+1、搜索镜像
+docker search tomcat
+2、拉取镜像
+docker pull tomcat
+3、根据镜像，启动容器
+docker run -d tomcat ##[-d]后台运行；启动不了的话，可能centos太旧，yum update更新 
+4、查看运行中的容器
+docker ps
+5、停止运行中的容器
+docker stop 容器ID
+6、查看所有的容器
+docker ps -a
+7、启动容器
+docker start 容器ID
+8、删除容器
+docker rm 容器ID
+9、启动一个做了端口映射的tomcat
+docker run -d -p 8888:8080 tomcat
+-d : 后台运行
+-p : 将主机的端口，映射到容器的端口  主机端口：容器端口
+# http://192.168.1.103:8888/ 可以看到tomcat管理画面，如果看到可以进行一下操作
+#查看防火墙状态
+#service firewalld status
+#临时关闭防火墙
+#systemctl stop firewalld
+#禁止开机启动
+#systemctl disable firewalld
+#如果启动容器时出现错误，重启docker
+# systemctl stop docker
+# systemctl start docker
+10、查看容器日志
+docker logs 容器ID
+#更多命令参照
+https://docs.docker.com/engine/reference/commandline/docker/
+可以参考每个镜像的文档
+```
+
+
+
