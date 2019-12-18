@@ -1,7 +1,7 @@
 # Initializers
-#org.springframework.context.ApplicationContextInitializer=\
-#com.wh.webrestful.listener.HelloApplicationContextInitializer
+org.springframework.context.ApplicationContextInitializer=\
+com.wh.webrestful.listener.HelloApplicationContextInitializer
 
 # Application Listeners
-#org.springframework.boot.SpringApplicationRunListener=\
-#com.wh.webrestful.listener.HelloSpringApplicationRunListener
+org.springframework.boot.SpringApplicationRunListener=\
+com.wh.webrestful.listener.HelloSpringApplicationRunListener
