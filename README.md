@@ -1002,9 +1002,13 @@ docker run -p 3307:3306 -e MYSQL_ROOT_PASSWORD=123456 -d mysql
 
 重要的事件回调机制
 
+配置在META-INF/spring.factories
+
 ApplicaitonContextInitializer
 
 SpringApplicationRunListener
+
+加载在IOC容器中 @Componet
 
 ApplicationRunner
 
@@ -1056,11 +1060,16 @@ public ConfigurableApplicationContext run(String... args) {
         //回调SpringApplicationRunListener.contextPrepared()
         this.prepareContext(context, environment, 
                             listeners, applicationArguments, printedBanner);
+        //prepareContext运行完成后，回调所有的SpringApplicationRunListener的ContextLoader方法
+        //刷新容器，Spring IOC容器初始化，如果是Web容器，还会创建嵌入式的Tomcat
         this.refreshContext(context);
+        //从IOC容器中获取所有的ApplicationRunner和CommandLineRunner进行回调
+        //先回调ApplicationRunner，再回调CommandLineRunner
         this.afterRefresh(context, applicationArguments);
         stopWatch.stop();
         if (this.logStartupInfo) {
-            (new StartupInfoLogger(this.mainApplicationClass)).logStarted(this.getApplicationLog(), stopWatch);
+            (new StartupInfoLogger(this.mainApplicationClass)).
+                logStarted(this.getApplicationLog(), stopWatch);
         }
 
         listeners.started(context);
