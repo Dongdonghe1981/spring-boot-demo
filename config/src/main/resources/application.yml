@@ -7,9 +7,6 @@
 #    - {firstName: JOHNNY,lastName: LOLLOBRIGIDA}
 server:
   port: 8081
-spring:
-  profiles:
-    active: prod
 ---
 server:
   port: 8082
