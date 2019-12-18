@@ -903,7 +903,7 @@ Docker容器（Container）：镜像启动后的实例，称为容器；容器�
 6）、设置好网络以后使用命令重启虚拟机的网络，或者重启虚拟机
 
 ```shell
-service network restart
++
 ```
 
 如果失败，参考[博客](https://blog.csdn.net/gunxueqiucjw/article/details/27231687)，[修改IP](https://blog.csdn.net/qq_41875147/article/details/81144327)，[启动异常](https://blog.csdn.net/yelllowcong/article/details/80389481)
@@ -985,10 +985,87 @@ docker run -d -p 8888:8080 tomcat
 # systemctl start docker
 10、查看容器日志
 docker logs 容器ID
+
+可以用一个镜像生成多个容器
+
 #更多命令参照
 https://docs.docker.com/engine/reference/commandline/docker/
 可以参考每个镜像的文档
+
+mysql 启动
+docker run -p 3307:3306 -e MYSQL_ROOT_PASSWORD=123456 -d mysql 
 ```
 
+## 六、SpringBoot与数据访问
 
+## 七、启动配置原理
+
+重要的事件回调机制
+
+ApplicaitonContextInitializer
+
+SpringApplicationRunListener
+
+ApplicationRunner
+
+CommandLineRunner
+
+#### 1、启动流程
+
+##### 1、创建SpringApplication对象
+
+```java
+public SpringApplication(ResourceLoader resourceLoader, Class<?>... primarySources) {
+    //判断当前是否是Web应用
+    this.webApplicationType = WebApplicationType.deduceFromClasspath();
+    //从META-INF/spring.factories下获取ApplicationContextInitializer，保存
+    this.setInitializers(this.getSpringFactoriesInstances(
+        ApplicationContextInitializer.class));
+    //从META-INF/spring.factories下获取ApplicationListener，保存
+    this.setListeners(
+        this.getSpringFactoriesInstances(ApplicationListener.class));
+    //从多个配置类中，找到有main方法的主配置类
+    this.mainApplicationClass = this.deduceMainApplicationClass();
+}
+```
+
+##### 2、运行run方法
+
+```java
+public ConfigurableApplicationContext run(String... args) {
+    //从META-INF/spring.factories下获取SpringApplicationRunListeners（默认配置）
+    SpringApplicationRunListeners listeners = this.getRunListeners(args);
+    //回调启动
+    listeners.starting();
+    try {
+		//封装命令行参数
+        ApplicationArguments applicationArguments =
+            new DefaultApplicationArguments(args);
+        //准备环境
+        //常见环境完成后，回调SpringApplicationRunListeners.environmentPrepared()，
+        //表示环境准备完成
+        ConfigurableEnvironment environment = 
+              this.prepareEnvironment(listeners, applicationArguments);
+        this.configureIgnoreBeanInfo(environment);
+        //打印Spring 图标
+        Banner printedBanner = this.printBanner(environment);
+        //创建ApplicationContext，创建web的IOC，还是普通的IOC
+        context = this.createApplicationContext();
+        //准备上下文环境，将environment保存到IOC中，
+        //回调之前保存的ApplicationContextInitializer.initialize()
+        //回调SpringApplicationRunListener.contextPrepared()
+        this.prepareContext(context, environment, 
+                            listeners, applicationArguments, printedBanner);
+        this.refreshContext(context);
+        this.afterRefresh(context, applicationArguments);
+        stopWatch.stop();
+        if (this.logStartupInfo) {
+            (new StartupInfoLogger(this.mainApplicationClass)).logStarted(this.getApplicationLog(), stopWatch);
+        }
+
+        listeners.started(context);
+        this.callRunners(context, applicationArguments);
+        } catch (Throwable var10) {
+}
+```
 
