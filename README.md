@@ -932,6 +932,15 @@ docker -v
 systemctl enable docker
 6、停止docker
 systemctl stop docker
+7、删除docker
+yum -y  remove  docker  docker-common  docker-selinux  docker-engine
+8、设置docker国内镜像
+touch /etc/docker/daemon.json
+{
+"registry-mirrors": ["http://hub-mirror.c.163.com"]
+}
+重启docker
+systemctl restart docker
 ```
 
 ### 4、Docker常用命令和操作
@@ -1075,6 +1084,165 @@ public ConfigurableApplicationContext run(String... args) {
         listeners.started(context);
         this.callRunners(context, applicationArguments);
         } catch (Throwable var10) {
+}
+```
+
+# 到70讲
+
+## 第三章 SpringBoot与检索
+
+### 一、了解Elasticsearch
+
+docker run -e ES_JAVA_OPS="-Xms256m -Xmx256m" -d -p 9200:9200 -p 9300:9300 --name ES01 2bd69c322e98 镜像ID
+
+修改配置文件
+
+find . -name elasticsearch.yml
+
+```shell
+[root@localhost /]# find . -name elasticsearch.yml
+./var/lib/docker/overlay2/c867403c261490aac50bd50b86dd2e27c4973ccdc6a18c2be3a74cc18523052d/diff/usr/share/elasticsearch/config/elasticsearch.yml
+./var/lib/docker/overlay2/a42c81ae0efb9bde7f7b966df2db9a5bb617611df055173d4a6419e514a434e6/diff/usr/share/elasticsearch/config/elasticsearch.yml
+[root@localhost /]# cat ./var/lib/docker/overlay2/a42c81ae0efb9bde7f7b966df2db9a5bb617611df055173d4a6419e514a434e6/diff/usr/share/elasticsearch/config/elasticsearch.yml
+cluster.name: "docker-cluster"
+network.host: 0.0.0.0
+cluster.initial_master_nodes: ["node-1"]
+bootstrap.memory_lock: false
+bootstrap.system_call_filter: false
+```
+
+[docker安装位置](https://blog.csdn.net/runner668/article/details/80713713)
+
+[docker容器和镜像区别](https://www.cnblogs.com/bethal/p/5942369.html)
+
+![image-20191220063415723](C:\Users\HP\AppData\Roaming\Typora\typora-user-images\image-20191220063415723.png)
+
+索引 -> 数据库/schema
+
+类型->表
+
+文档->记录
+
+属性->字段
+
+### 二、跟SpringBoot整合
+
+#### 1、使用Jedis
+
+#### 2、使用SpringData JPA
+
+| Spring Data Elasticsearch | Elasticsearch |
+| :-----------------------: | :-----------: |
+|           3.2.x           |     6.8.1     |
+|           3.0.x           |     5.5.0     |
+
+使用Docker下载Elasticsearch 6.8.1版本
+
+### 六、SpringBoot与分布式
+
+#### 1、zookeeper启动
+
+$ docker run --name zk01 -p 2181:2181 --restart always -d 镜像ID
+
+#### 2、创建Consumer和Provider工程
+
+##### 1）Provider工程
+
+###### 1.中引入dubbo和zookeeper依赖
+
+dubbo与SpringBoot整合的GitHub
+
+https://github.com/apache/dubbo-spring-boot-project/blob/master/README_CN.md
+
+| Dubbo Spring Boot                                            | Dubbo  | Spring Boot |
+| ------------------------------------------------------------ | ------ | ----------- |
+| [0.2.1.RELEASE](https://github.com/apache/dubbo-spring-boot-project/tree/0.2.x) | 2.6.5+ | 2.x         |
+| [0.1.2.RELEASE](https://github.com/apache/dubbo-spring-boot-project/tree/0.1.x) | 2.6.5+ | 1.x         |
+
+```xml
+       <!-- 引入Dubbo依赖-->
+        <dependency>
+            <groupId>com.alibaba.boot</groupId>
+            <artifactId>dubbo-spring-boot-starter</artifactId>
+            <version>0.2.1.RELEASE</version>
+        </dependency>
+        <dependency>
+            <groupId>com.alibaba</groupId>
+            <artifactId>dubbo</artifactId>
+            <version>2.6.5</version>
+            <scope>compile</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.curator</groupId>
+            <artifactId>curator-framework</artifactId>
+            <version>4.0.0</version>
+        </dependency>
+        <!-- 引入zookeeper客户端-->
+        <dependency>
+            <groupId>com.github.sgroschupf</groupId>
+            <artifactId>zkclient</artifactId>
+            <version>0.1</version>
+            <exclusions>
+                <exclusion>
+                    <groupId>org.apache.zookeeper</groupId>
+                    <artifactId>zookeeper</artifactId>
+                </exclusion>
+            </exclusions>
+        </dependency>
+```
+
+###### 2.配置dobbo注册中心地址 application.properties
+
+```properties
+dubbo.application.name=provicer-ticket
+dubbo.registry.address=zookeeper://192.168.1.200:2181
+dubbo.scan.base-packages=com.wh.ticket.service
+```
+
+###### 3.ServiceImpl类中，加入下列注解，@Service发布服务
+
+```java
+@Component
+@Service//com.alibaba.dubbo.config.annotation.Service
+public class TicketServiceImpl implements  TicketService{
+```
+
+##### 1）Consumer工程
+
+###### 1.中引入dubbo和zookeeper依赖
+
+跟Provider工程同样
+
+###### 2.配置dobbo注册中心地址 application.properties
+
+```properties
+dubbo.application.name=comsumer-user
+dubbo.registry.address=zookeeper://192.168.1.200:2181
+```
+
+###### 3.将Provider工程中的接口Service，拷贝到Consumer工程，package相同
+
+```java
+@Component
+@Service//com.alibaba.dubbo.config.annotation.Service
+public class TicketServiceImpl implements  TicketService{
+```
+
+###### 4.调用远程Service接口
+
+```java
+import com.alibaba.dubbo.config.annotation.Reference;
+import org.springframework.stereotype.Service;
+import com.wh.ticket.service.TicketService;
+
+@Service
+public class UserService {
+    @Reference
+    TicketService ticketService;
+
+    public void hello(){
+        System.out.println(ticketService.getTicket());
+    }
 }
 ```
 
